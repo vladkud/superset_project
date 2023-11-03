@@ -1,0 +1,14 @@
+.pivot_table_v_2 table.pvtTable td.pvtVal
+{
+    text-align: center;
+}
+
+.pivot_table_v_2 table.pvtTable th.pvtColLabel.hoverable
+{
+    text-align: center;
+}
+
+.big_number superset-legacy-chart-big-number css-b04u0p
+{
+  antd-wave-shadow-color: #6cae9e
+}
