@@ -1,43 +1,39 @@
 
-## Project Description
+## Описание проекта
 
-This repository contains the code for a project that involves visualizing product and economics metrics using the Superset BI system. It includes all the necessary datasets, SQL scripts, and instructions to run the project. The project is fully completed.
-
-## Project Technologies
-
-Docker, Postgres, Apache Superset.
-
-## Project Aim and Possible Usage
-
-The primary objective of this project is to demonstrate the connection between the datasets and the types of charts used to visualize them. The visualizations provide insights into the user base, revenue generation, and retention rates, enabling you to make informed decisions for your business.
-
-Additionally, this project serves as a summary of all the information on using databases, writing complex SQL scripts, and data visualization during my studies. It can be used as a case study to understand how to utilize all the mentioned technologies together.
+Основная цель проекта — расчет и визуализация пользовательских и экономических показателей компании по доставке еды. Визуализация показателей удержания (Retention), среднего дохода на платящего пользователя (ARPPU) и прочих метрик помогает бизнесу принимать объективные решения. Проект также полезен наличием инструкций по настройке Superset BI, использованию его функционала, включая создание виртуальных датасетов и применение виртуальных стилей оформления. В папках проекта содержатся данные для анализа в формате CSV, а также SQL-скрипты для загрузки и трансформации данных. В описании проекта присутствуют инструкции по его запуску.
 
 <img src="https://raw.githubusercontent.com/vlkudriashev/superset_project/master/analytics_dashboard.jpg" width=75%>
 
-## TABLE OF CONTENTS
+## Используемые технологии
 
-* [Installation](#installation)
-* [Data Processing](#data-processing)
-* [Data Visualization](#data-visualization)
-	
-## Installation
+Apache Superset, PostgreSQL, Docker.
 
-### Install Docker 
+## Содержание
 
-To install docker locally on Linux machine follow the official instructions: https://docs.docker.com/engine/install/ubuntu/.
+* [Установка](#установка)
+* [Обработка данных](#обработка-данных)
+* [Визуализация данных](#визуализация-данных)
 	
-### Configure network
+## Установка
+
+### Установка Docker 
+
+Для работы с проектом необходимо установить docker локально на компьютере с Linux в соответствии с официальной инструкцией: https://docs.docker.com/engine/install/ubuntu/.
 	
-Here we need to create network, so that different APP Containers we deploy could talk to each other:
+### Настройка сети
+	
+ Далее создаётся единая сеть, чтобы контейнеры приложений BI-системы и СУБД PostgreSQL могли взаимодействовать друг с другом:
 
 	docker network create app_net
 		
-### Configure Postgres Image
+### Настройка Docker-образа Postgres
 
-We need to create a volume to store data of our Postgres Database, so that we don't lose data, working with our datasets from DB later.
+Теперь нужно создать том для хранения данных СУБД PostgreSQL, чтобы избежать потери данных при дальнейшей работе с наборами данных из базы.
 		
 	docker volume create postgres_volume
+
+Наконец можно запустить контейнер с СУБД PostgreSQL.
 
 	sudo docker run -d \
 		--name postgres_1 \
@@ -49,9 +45,9 @@ We need to create a volume to store data of our Postgres Database, so that we do
 		-p 5432:5432 \
 		postgres:14	
 	
-### Configure Superset
+### Настройка Docker-образа Superset
 
-Finally, we need to specify app-net, so that our Database and BI System could talk to each other.
+По аналогии, создаётся том для хранения данных Superset и обозначается секретный ключ для запуска Superset.
 
 	docker volume superset_volume
 	
@@ -60,58 +56,52 @@ Finally, we need to specify app-net, so that our Database and BI System could ta
 		-e "SUPERSET_SECRET_KEY=YOUR_SECRET_KEY" \
 		--name superset apache/superset
 	
-Further instructions for running Superset can be found in the official documentation: https://hub.docker.com/r/apache/superset.
+Больше информации о запуске Superset можно найти в официальной документации к докер образу: https://hub.docker.com/r/apache/superset.
 	
-## Data Processing
+## Обработка данных
 
-### Dataset description
+### Описание наборов данных
 
-This dataset contains data on orders, users, and other information of a food delivery tech company. The data was randomly generated.
+В папке "csv-files" проекта содержатся файлы в формате CSV. Файлы содержат архивные данные о клиентах и их транзакциях интернет-магазина по доставке еды.
 
-### Loading data to Postgres
+### Загрузка данных в Postgres
 
-You can load data into Postgres using a data management system like DBeaver or the command line. Since built-in data management tools can struggle with processing csv files correctly, we import all timestamp columns and array data as varchar type and later convert them using DML operations. The rest of the data can be imported as integer type.
+Исходные данные в формате CSV можно загрузить в базу данных, используя систему управления данными, такую как DBeaver. Также можно использовать командную строку и команду COPY. Поскольку встроенные средства управления данными могут испытывать трудности с корректной обработкой csv-файлов, мы импортируем все столбцы временных меток и данные массива как тип varchar, а затем преобразуем их с помощью операций DML. Остальные данные могут быть импортированы как целочисленный тип.
+
+Затем мы запускаем команды DML для обработки данных CSV в следующем порядке:
+
+* Скрипт "clean_order_data" форматирует данные для преобразования в тип массива.
+* Скрипт "change_order_data_type" преобразует данные в тип данных массива.
+* Скрипт "change_order_creation_time" преобразует импортированные временные метки в формате varchar в корректный формат временных меток (timestamp).
 		
-Then we run DDL commands to process CSV data in the following order:
+## Визуализация данных
 
-* The "clean_order_data" script formats the data for further conversion to array data type.
-* The "change_order_data_type" script converts the data to array data type.
-* The "change_order_creation_time" script converts the imported timestamps in varchar format to the proper timestamp format.
-		
-## Data Visualization
+### Создание виртуальных наборов данных (Virtual Datasets)
 
-### Creating Virtual Datasets
+Для визуализации данных сначала следует создать виртуальные наборы данных в качестве основы для графиков. В папке «sql-scripts» представлены соответствующие SQL-скрипты. Их необходимо выполнить в редакторе SQL-Lab в определенной последовательности, создавая свой набор данных на основе каждого скрипта. После этого можно переходить к созданию графиков.
+	
+* #### Набор данных 1: Платящие пользователи и общее количество заказов
+    
+     Этот набор данных создается на основе скрипта «paying_users_and_total_orders» и служит основой для серии графиков «Большое число с линией тренда» ("Big Number with Trendline") в верхней части дашборда. Графики отображают общее количество платящих пользователей и совершенных заказов за указанный период. Линия тренда позволяет определить динамику пользовательской базы.
+	
+* #### Набор данных 2: Новые и общее количество пользователей
 
-To visualize the data, we first need to create Virtual Datasets, which will serve as base for our Charts. To do this we go to SQL-Lab editor and run the further explained SQL-queries provided in the repository. Then we proceed to creating Charts from its contents.
+	Набор данных, созданный на основе скрипта «new_and_total_users», служит основой для «Смешанной диаграммы» ("Mixed Chart") на левой стороне визуализации. Диаграмма демонстрирует количество новых пользователей и общую пользовательскую базу за указанный период времени. На линейном графике отображается общее количество пользователей, на столбчатом – количество новых. Это помогает понять динамику роста пользовательской базы и роль новых пользователей в этом процессе.
 
-The Virtual Datasets are based on scripts from the "sql-scripts" folder.
+* #### Набор данных 3: ARPU, ARPPU, AOV
 	
-* #### Virtual Dataset 1: Paying users and Total orders
+	Набор данных на основе скрипта «arpu_arppu_aov» служит основой для линейной диаграммы ("Line Chart") на правой стороне визуализации. Она отображает средний доход на пользователя (ARPU), доход на платящего пользователя (ARPPU) и среднюю стоимость заказа (AOV) за указанный период. Это помогает оценить доход от пользовательской базы, влияние новых платящих пользователей.
 
-	This dataset should be created based on the script "paying_users_and_total_orders" and helps you to create a series of "Big Number with Trendline" charts at the top of the Dashboard. The purpose of these charts is to show the total number of paying users and the total number of orders over a period of time. The trendline helps you to identify the growth or decline of the user base.
+* #### Набор данных 4: Показатель удержания пользователей (Retention rate)
 	
-* #### Virtual Dataset 2: New and Total Users
+	Набор данных, основанный на скрипте «retention_calculation», становится сводной таблицей ("Pivot table") в центральной части визуализации. Таблица отражает уровень удержания пользователей – долю пользователей, продолжающих оставаться активными после заданного периода. Это позволяет оценить уровень удержания и влияющие на него факторы.
+	
+### Применение CSS-стилей
 
-	This dataset should be created based on the script "new_and_total_users" and helps you to create a "Mixed Chart" for the left side of the visualization. The chart shows the number of new users and the total number of users over a period of time. The line graph represents the total number of users, while the column graph represents the number of new users. This visualization helps you to understand the growth of the user base and the impact of new users on the total user count.
-
-* #### Virtual Dataset 3: ARPU, ARPPU, AOV
+Superset по умолчанию выравнивает данные в ячейках сводной таблицы по левому краю. Это может быть не очень удобно для восприятия информации, поэтому мы можем центрировать положение значений в ячейках, чтобы улучшить читаемость и эстетику таблицы.
 	
-	This dataset should be created based on the script "arpu_arppu_aov" and helps you to create a "Line Chart" for the right side of the visualization. The chart shows the average revenue per user (ARPU), average revenue per paying user (ARPPU), and the average order value (AOV) over a period of time. This visualization helps you to understand the revenue generated from the user base and the impact of new paying users on the overall revenue.
-
-* #### Virtual Dataset 4: Retention calculation
+Больше о работе со стилями можно узнать из официального блога компании Preset: https://preset.io/blog/customizing-superset-dashboards-with-css/
 	
-	This dataset should be created based on the script "retention_calculation" and helps you to create a "Pivot table" for the center of the visualization. The table shows the retention rate of the users, i.e., the percentage of users who remain active after a certain period of time. This visualization helps you to understand the user retention rate and the factors that contribute to it.
+## Благодарности
 	
-### Applying CSS Styles
-
-By default, Superset aligns all the information in the Pivot table chart cells by the left side. 
-It can be inconvenient, so we can align it at the center to increase chart's usability and create more aesthetic look.
-File "pivot_table.css" contains CSS style for performing this operation.
-	
-You can learn more about working with styles from the official blog: https://preset.io/blog/customizing-superset-dashboards-with-css/
-	
-## Acknowledgments
-	
-I would like to thank Anton Sidorin - a backend developer from Karpov Cources for providing detailed instructions on running Docker Containers.
-	
-Enjoy the final result!
+Я хотел бы поблагодарить Антона Сидорина - бэкенд-разработчика из Karpov Sources за подробные Youtube-инструкции по запуску контейнеров Docker.
